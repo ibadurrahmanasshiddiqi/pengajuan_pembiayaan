@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTPN Syariah - Sistem Pembiayaan Dashboard</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        /* --- DESIGN SYSTEM --- */
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E85A2A;
+            --primary-light: #FF8C66;
+            --secondary: #1A1A2E;
+            --accent: #16213E;
+            --success: #00B894;
+            --warning: #FDCB6E;
+            --danger: #D63031;
+            --info: #0984E3;
+            --light: #F8F9FA;
+            --dark: #2C3E50;
+            --border: #E1E8ED;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--secondary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            background: white;
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-sm);
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+        }
+
+        .header-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .header-subtitle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .cloud-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00B894;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* --- NAVIGATION --- */
+        .nav-container {
+            background: white;
+            box-shadow: var(--shadow-sm);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 75px;
+            z-index: 99;
+        }
+
+        .nav-tabs {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            gap: 2rem;
+            overflow-x: auto;
+        }
+
+        .nav-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: #6C757D;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-item:hover {
+            color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* --- MAIN CONTENT --- */
+        main {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* --- CARDS --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.75rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card.blue { border-left-color: var(--info); }
+        .stat-card.green { border-left-color: var(--success); }
+        .stat-card.red { border-left-color: var(--danger); }
+        .stat-card.orange { border-left-color: var(--primary); }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            font-size: 0.85rem;
+            color: #6C757D;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--secondary);
+            line-height: 1;
+        }
+
+        .stat-footer {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: #6C757D;
+        }
+
+        /* --- CHART CARD --- */
+        .chart-card {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .bar-label {
+            width: 180px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .bar-track {
+            flex: 1;
+            background: #F1F3F5;
+            height: 32px;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: width 0.8s ease;
+            border-radius: 16px;
+        }
+
+        .bar-fill.done { background: linear-gradient(90deg, var(--success), #00D2A3); }
+        .bar-fill.reject { background: linear-gradient(90deg, var(--danger), #FF5E62); }
+        .bar-fill.pending { background: linear-gradient(90deg, var(--warning), #FDD65D); }
+        .bar-fill.process { background: linear-gradient(90deg, var(--info), #74B9FF); }
+
+        /* --- FORM & TABLE LAYOUT --- */
+        .content-layout {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .content-layout { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        /* --- FORM --- */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--dark);
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        textarea.form-input {
+            min-height: 80px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            width: 100%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: #E9ECEF;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-info { background: var(--info); color: white; }
+
+        /* --- TABLE --- */
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236C757D" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>') no-repeat 12px center;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            color: white;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-done { background: #D4EDDA; color: #155724; }
+        .badge-reject { background: #F8D7DA; color: #721C24; }
+        .badge-pending { background: #FFF3CD; color: #856404; }
+        .badge-process { background: #D1ECF1; color: #0C5460; }
+
+        /* --- LOADING & EMPTY STATE --- */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6C757D;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* --- TOAST --- */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 1000;
+            border-left: 4px solid;
+        }
+
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+
+        /* --- MODAL --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6C757D;
+            transition: color 0.3s;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo">BTPN</div>
+                <div>
+                    <div class="header-title">Sistem Pembiayaan Dashboard</div>
+                    <div class="header-subtitle">Bank BTPN Syariah - Cloud Monitoring</div>
+                </div>
+            </div>
+            <div class="cloud-status">
+                <span class="status-dot"></span>
+                <span>Cloud Connected</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <div class="nav-container">
+        <div class="nav-tabs">
+            <div class="nav-item active" onclick="switchTab('dashboard', this)">
+                <span>📊</span> Dashboard
+            </div>
+            <div class="nav-item" onclick="switchTab('input', this)">
+                <span>✏️</span> Input Pengajuan
+            </div>
+            <div class="nav-item" onclick="switchTab('data', this)">
+                <span>📋</span> Data Management
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <!-- DASHBOARD SECTION -->
+        <section id="dashboard-section" class="section active">
+            <h2 class="page-title">Dashboard Overview</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-header">
+                        <div class="stat-title">Total Pengajuan</div>
+                        <div class="stat-icon" style="background: rgba(9, 132, 227, 0.1); color: var(--info);">📁</div>
+                    </div>
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-footer">Semua data tercatat</div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-header">
+                        <div class="stat-title">Done (Sukses)</div>
+                        <div class="stat-icon" style="background: rgba(0, 184, 148, 0.1); color: var(--success);">✅</div>
+                    </div>
+                    <div class="stat-value" id="stat-done">0</div>
+                    <div class="stat-footer" id="success-rate">0% Success Rate</div>
+                </div>
+
+                <div class="stat-card red">
+                    <div class="stat-header">
+                        <div class="stat-title">Reject (Gagal)</div>
+                        <div class="stat-icon" style="background: rgba(214, 48, 49, 0.1); color: var(--danger);">❌</div>
+                    </div>
+                    <div class="stat-value" id="stat-reject">0</div>
+                    <div class="stat-footer">Perlu tindak lanjut</div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-header">
+                        <div class="stat-title">Pending/Process</div>
+                        <div class="stat-icon" style="background: rgba(255, 107, 53, 0.1); color: var(--primary);">⏳</div>
+                    </div>
+                    <div class="stat-value" id="stat-pending">0</div>
+                    <div class="stat-footer">Dalam proses</div>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Distribusi Status Validasi</h3>
+                </div>
+                <div id="status-chart" class="bar-chart"></div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Top 5 Alasan Reject</h3>
+                </div>
+                <div id="reject-chart" class="bar-chart"></div>
+            </div>
+        </section>
+
+        <!-- INPUT SECTION -->
+        <section id="input-section" class="section">
+            <h2 class="page-title">Input Pengajuan Baru</h2>
+            
+            <div class="card">
+                <form id="createForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="inputEmail" class="form-input" placeholder="user@btpnsyariah.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nama Pengaju (AO/Staff)</label>
+                            <input type="text" id="inputName" class="form-input" placeholder="Nama Lengkap" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Kode MMS</label>
+                            <input type="text" id="inputKodeMMS" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nama MMS</label>
+                            <input type="text" id="inputNamaMMS" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">CIF Nasabah</label>
+                            <input type="number" id="inputCIF" class="form-input" placeholder="Nomor CIF" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nama Nasabah</label>
+                            <input type="text" id="inputNamaNasabah" class="form-input" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nama Sentra</label>
+                        <input type="text" id="inputSentra" class="form-input" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Siklus TPSK Terakhir</label>
+                            <input type="number" id="inputSiklus" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Plafon TPSK Terakhir</label>
+                            <input type="number" id="inputPlafon" class="form-input" placeholder="Rp">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status Pembiayaan TPSK</label>
+                        <select id="inputStatusFinansial" class="form-select">
+                            <option value="Lancar">Lancar</option>
+                            <option value="Kurang Lancar">Kurang Lancar</option>
+                            <option value="Diragukan">Diragukan</option>
+                            <option value="Macet">Macet</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Validasi Data</label>
+                        <select id="inputValidasi" class="form-select" required>
+                            <option value="">-- Pilih Validasi --</option>
+                            <option value="Done">Done</option>
+                            <option value="Upload Tepati">Upload Tepati</option>
+                            <option value="Reject SLIK">Reject SLIK</option>
+                            <option value="Reject">Reject</option>
+                            <option value="Status Nasabah Tidak Aktif">Status Nasabah Tidak Aktif</option>
+                            <option value="Reject-Dokumen Tidak Lengkap">Reject-Dokumen Tidak Lengkap</option>
+                            <option value="Reject-Double Pengajuan">Reject-Double Pengajuan</option>
+                            <option value="Reject-Siklus Tidak Sesuai">Reject-Siklus Tidak Sesuai</option>
+                            <option value="Pending-butuh konfirmasi">Pending-butuh konfirmasi</option>
+                            <option value="Reject-Plafon TPSK < Rp.8.000.000">Reject-Plafon TPSK < Rp.8.000.000</option>
+                            <option value="Not Process-Sudah tersedia di Tepati">Not Process-Sudah tersedia di Tepati</option>
+                            <option value="Reject-Masih ada pembiayaan Top Up">Reject-Masih ada pembiayaan Top Up</option>
+                            <option value="Reject-nasabah tidak aktif">Reject-nasabah tidak aktif</option>
+                            <option value="Reject-Sudah tersedia di Tepati">Reject-Sudah tersedia di Tepati</option>
+                            <option value="Reject-Cif tidak di temukan">Reject-Cif tidak di temukan</option>
+                            <option value="Reject-plafon tidak memenuhi kriteria">Reject-plafon tidak memenuhi kriteria</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Keterangan</label>
+                        <textarea id="inputKeterangan" class="form-input" rows="3" placeholder="Catatan tambahan..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">💾 Simpan Pengajuan</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">🔄 Reset Form</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- DATA SECTION -->
+        <section id="data-section" class="section">
+            <h2 class="page-title">Data Management</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Daftar Pembiayaan</h3>
+                    <button class="btn btn-info btn-sm" onclick="downloadCSV()">📥 Download CSV</button>
+                </div>
+
+                <div class="table-controls">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Cari nasabah, CIF, atau status..." onkeyup="filterData()">
+                    </div>
+                </div>
+
+                <div id="loadingIndicator" class="loading" style="display:none;">
+                    <div class="spinner"></div>
+                    <p>Memuat data dari cloud...</p>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Nasabah</th>
+                                <th>Info Pembiayaan</th>
+                                <th>Validasi</th>
+                                <th>Keterangan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="empty-state" style="display:none;">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>Belum Ada Data</h3>
+                    <p>Silakan tambahkan pengajuan baru pada menu Input Pengajuan</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toastIcon">✓</span>
+        <span id="toastMessage">Operasi berhasil</span>
+    </div>
+
+    <script>
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDP7-fXdhMaAUSxQaa-VZWQUKsLQcpvTvE",
+            authDomain: "command-center-cdb69.firebaseapp.com",
+            projectId: "command-center-cdb69",
+            storageBucket: "command-center-cdb69.firebasestorage.app",
+            messagingSenderId: "186919663224",
+            appId: "1:186919663224:web:042b5493ae487c2b5bdf8d",
+            measurementId: "G-SGNYVWP14S"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const collection = db.collection('pembiayaan_data');
+
+        // --- GLOBAL STATE ---
+        let allData = [];
+        let filteredData = [];
+
+        // --- TAB NAVIGATION ---
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(tabName + '-section').classList.add('active');
+
+            if (tabName === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // --- LOAD DATA FROM FIREBASE ---
+        async function loadData() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            
+            try {
+                const snapshot = await collection.orderBy('startTime', 'desc').get();
+                allData = [];
+                
+                snapshot.forEach(doc => {
+                    allData.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                filteredData = [...allData];
+                renderTable();
+                updateDashboard();
+                
+                document.getElementById('loadingIndicator').style.display = 'none';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('loadingIndicator').innerHTML = '<p style="color:var(--danger);">❌ Gagal memuat data: ' + error.message + '</p>';
+            }
+        }
+
+        // --- SAVE DATA ---
+        async function saveData(e) {
+            e.preventDefault();
+
+            const formData = {
+                email: document.getElementById('inputEmail').value,
+                name: document.getElementById('inputName').value,
+                kodeMMS: document.getElementById('inputKodeMMS').value,
+                namaMMS: document.getElementById('inputNamaMMS').value,
+                cif: document.getElementById('inputCIF').value,
+                namaNasabah: document.getElementById('inputNamaNasabah').value,
+                namaSentra: document.getElementById('inputSentra').value,
+                siklusTpsk: document.getElementById('inputSiklus').value || 0,
+                plafonTpsk: document.getElementById('inputPlafon').value || 0,
+                statusFinansial: document.getElementById('inputStatusFinansial').value,
+                validasiData: document.getElementById('inputValidasi').value,
+                keterangan: document.getElementById('inputKeterangan').value,
+                startTime: firebase.firestore.FieldValue.serverTimestamp(),
+                completionTime: null,
+                updatedAt: null
+            };
+
+            const btn = document.querySelector('#createForm button[type="submit"]');
+            btn.textContent = '⏳ Menyimpan...';
+            btn.disabled = true;
+
+            try {
+                await collection.add(formData);
+                
+                btn.textContent = '✅ Tersimpan!';
+                setTimeout(() => {
+                    btn.textContent = '💾 Simpan Pengajuan';
+                    btn.disabled = false;
+                }, 1500);
+
+                resetForm();
+                loadData();
+                showToast('Data berhasil disimpan ke cloud!', 'success');
+            } catch (error) {
+                btn.textContent = '💾 Simpan Pengajuan';
+                btn.disabled = false;
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // --- RENDER TABLE ---
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                document.querySelector('.table-wrapper').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('emptyState').style.display = 'none';
+            document.querySelector('.table-wrapper').style.display = 'block';
+
+            filteredData.forEach(item => {
+                const statusBadge = getStatusBadge(item.validasiData);
+                const startTime = item.startTime ? new Date(item.startTime.toDate()).toLocaleString('id-ID') : '-';
+                
+                const row = `
+                    <tr>
+                        <td>
+                            <div style="font-size:0.85rem; color:#6C757D;">
+                                ${startTime}
+                            </div>
+                        </td>
+                        <td>
+                            <strong>${item.namaNasabah}</strong><br>
+                            <span style="font-size:0.85rem; color:#6C757D;">CIF: ${item.cif}</span><br>
+                            <span style="font-size:0.85rem; color:#6C757D;">Sentra: ${item.namaSentra}</span>
+                        </td>
+                        <td>
+                            <div>Siklus: ${item.siklusTpsk || '-'}</div>
+                            <div>Plafon: Rp ${parseInt(item.plafonTpsk || 0).toLocaleString('id-ID')}</div>
+                            <div style="margin-top:4px;"><span class="badge badge-process">${item.statusFinansial}</span></div>
+                        </td>
+                        <td>
+                            <span class="${statusBadge}">${item.validasiData}</span>
+                        </td>
+                        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">
+                            ${item.keterangan || '-'}
+                        </td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deleteData('${item.id}')">🗑️ Hapus</button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // --- DELETE DATA ---
+        async function deleteData(id) {
+            if (!confirm('Hapus data ini dari cloud?')) return;
+
+            try {
+                await collection.doc(id).delete();
+                loadData();
+                showToast('Data berhasil dihapus', 'error');
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // --- FILTER DATA ---
+        function filterData() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            filteredData = allData.filter(item => 
+                item.namaNasabah.toLowerCase().includes(term) ||
+                item.cif.includes(term) ||
+                item.namaSentra.toLowerCase().includes(term) ||
+                item.validasiData.toLowerCase().includes(term)
+            );
+            renderTable();
+        }
+
+        // --- UPDATE DASHBOARD ---
+        function updateDashboard() {
+            const total = allData.length;
+            const done = allData.filter(d => d.validasiData === 'Done').length;
+            const reject = allData.filter(d => d.validasiData.includes('Reject')).length;
+            const pending = allData.filter(d => d.validasiData.includes('Pending') || d.validasiData.includes('Not Process')).length;
+            const process = allData.filter(d => d.validasiData.includes('Upload')).length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-done').textContent = done;
+            document.getElementById('stat-reject').textContent = reject;
+            document.getElementById('stat-pending').textContent = pending + process;
+
+            const successRate = total > 0 ? ((done / total) * 100).toFixed(1) : 0;
+            document.getElementById('success-rate').textContent = successRate + '% Success Rate';
+
+            // Status Chart
+            const statusHTML = `
+                ${createBar('Done', done, total, 'done')}
+                ${createBar('Reject', reject, total, 'reject')}
+                ${createBar('Pending/Process', pending + process, total, 'pending')}
+            `;
+            document.getElementById('status-chart').innerHTML = statusHTML;
+
+            // Reject Reasons Chart
+            const rejectCounts = {};
+            allData.forEach(d => {
+                if (d.validasiData.includes('Reject')) {
+                    rejectCounts[d.validasiData] = (rejectCounts[d.validasiData] || 0) + 1;
+                }
+            });
+
+            const sortedRejects = Object.entries(rejectCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            if (sortedRejects.length > 0) {
+                const maxCount = sortedRejects[0][1];
+                let rejectHTML = '';
+                sortedRejects.forEach(([reason, count]) => {
+                    const width = (count / maxCount) * 100;
+                    const shortReason = reason.length > 35 ? reason.substring(0, 35) + '...' : reason;
+                    rejectHTML += `
+                        <div class="bar-row">
+                            <div class="bar-label">${shortReason}</div>
+                            <div class="bar-track">
+                                <div class="bar-fill reject" style="width: ${width}%">${count} kasus</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('reject-chart').innerHTML = rejectHTML;
+            } else {
+                document.getElementById('reject-chart').innerHTML = '<p class="empty-state">Belum ada data reject</p>';
+            }
+        }
+
+        function createBar(label, count, total, cssClass) {
+            const percent = total === 0 ? 0 : Math.round((count / total) * 100);
+            return `
+                <div class="bar-row">
+                    <div class="bar-label">${label} (${count})</div>
+                    <div class="bar-track">
+                        <div class="bar-fill ${cssClass}" style="width: ${percent}%">${percent}%</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- DOWNLOAD CSV ---
+        function downloadCSV() {
+            if (allData.length === 0) {
+                showToast('Tidak ada data untuk diunduh', 'error');
+                return;
+            }
+
+            const headers = ["Waktu", "Email", "Nama", "Kode MMS", "Nama MMS", "CIF", "Nama Nasabah", "Sentra", "Siklus", "Plafon", "Status", "Validasi", "Keterangan"];
+            const csvRows = [headers.join(',')];
+
+            allData.forEach(row => {
+                const startTime = row.startTime ? new Date(row.startTime.toDate()).toLocaleString('id-ID') : '-';
+                const values = [
+                    `"${startTime}"`,
+                    `"${row.email}"`,
+                    `"${row.name}"`,
+                    `"${row.kodeMMS}"`,
+                    `"${row.namaMMS}"`,
+                    `"${row.cif}"`,
+                    `"${row.namaNasabah}"`,
+                    `"${row.namaSentra}"`,
+                    row.siklusTpsk,
+                    row.plafonTpsk,
+                    `"${row.statusFinansial}"`,
+                    `"${row.validasiData}"`,
+                    `"${(row.keterangan || '').replace(/"/g, '""')}"`
+                ];
+                csvRows.push(values.join(','));
+            });
+
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Laporan_Pembiayaan_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            
+            showToast('Laporan berhasil diunduh!', 'success');
+        }
+
+        // --- UTILITIES ---
+        function getStatusBadge(status) {
+            if (status === 'Done') return 'badge badge-done';
+            if (status.includes('Reject')) return 'badge badge-reject';
+            if (status.includes('Pending')) return 'badge badge-pending';
+            return 'badge badge-process';
+        }
+
+        function resetForm() {
+            document.getElementById('createForm').reset();
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = msg;
+            document.getElementById('toastIcon').textContent = type === 'success' ? '✓' : '⚠';
+            toast.className = 'toast show ' + type;
+            setTimeout(() => toast.className = toast.className.replace('show', ''), 3000);
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('createForm').addEventListener('submit', saveData);
+
+        // --- INIT ---
+        window.onload = function() {
+            loadData();
+        };
+    </script>
+</body>
+</html>

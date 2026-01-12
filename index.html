@@ -864,6 +864,109 @@
         <span id="toastMessage">Operasi berhasil</span>
     </div>
 
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeEditModal()">&times;</span>
+            <h2 style="color: var(--primary); margin-bottom: 2rem;">Edit Data Pembiayaan</h2>
+            
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="editEmail" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nama Pengaju</label>
+                        <input type="text" id="editName" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Kode MMS</label>
+                        <input type="text" id="editKodeMMS" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nama MMS</label>
+                        <input type="text" id="editNamaMMS" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">CIF Nasabah</label>
+                        <input type="number" id="editCIF" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nama Nasabah</label>
+                        <input type="text" id="editNamaNasabah" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Nama Sentra</label>
+                    <input type="text" id="editSentra" class="form-input" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Siklus TPSK</label>
+                        <input type="number" id="editSiklus" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Plafon TPSK</label>
+                        <input type="number" id="editPlafon" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status Pembiayaan TPSK</label>
+                    <select id="editStatusFinansial" class="form-select">
+                        <option value="Lancar">Lancar</option>
+                        <option value="Kurang Lancar">Kurang Lancar</option>
+                        <option value="Diragukan">Diragukan</option>
+                        <option value="Macet">Macet</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Validasi Data</label>
+                    <select id="editValidasi" class="form-select" required>
+                        <option value="Done">Done</option>
+                        <option value="Upload Tepati">Upload Tepati</option>
+                        <option value="Reject SLIK">Reject SLIK</option>
+                        <option value="Reject">Reject</option>
+                        <option value="Status Nasabah Tidak Aktif">Status Nasabah Tidak Aktif</option>
+                        <option value="Reject-Dokumen Tidak Lengkap">Reject-Dokumen Tidak Lengkap</option>
+                        <option value="Reject-Double Pengajuan">Reject-Double Pengajuan</option>
+                        <option value="Reject-Siklus Tidak Sesuai">Reject-Siklus Tidak Sesuai</option>
+                        <option value="Pending-butuh konfirmasi">Pending-butuh konfirmasi</option>
+                        <option value="Reject-Plafon TPSK < Rp.8.000.000">Reject-Plafon TPSK < Rp.8.000.000</option>
+                        <option value="Not Process-Sudah tersedia di Tepati">Not Process-Sudah tersedia di Tepati</option>
+                        <option value="Reject-Masih ada pembiayaan Top Up">Reject-Masih ada pembiayaan Top Up</option>
+                        <option value="Reject-nasabah tidak aktif">Reject-nasabah tidak aktif</option>
+                        <option value="Reject-Sudah tersedia di Tepati">Reject-Sudah tersedia di Tepati</option>
+                        <option value="Reject-Cif tidak di temukan">Reject-Cif tidak di temukan</option>
+                        <option value="Reject-plafon tidak memenuhi kriteria">Reject-plafon tidak memenuhi kriteria</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Keterangan</label>
+                    <textarea id="editKeterangan" class="form-input" rows="3"></textarea>
+                </div>
+
+                <div style="display:flex; gap:1rem; margin-top:2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()" style="width:auto;">Batal</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;">💾 Update Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // --- FIREBASE CONFIG ---
         const firebaseConfig = {
@@ -1011,6 +1114,7 @@
                             ${item.keterangan || '-'}
                         </td>
                         <td>
+                            <button class="btn btn-info btn-sm" onclick="openEditModal('${item.id}')" style="margin-right:5px;">✏️ Edit</button>
                             <button class="btn btn-danger btn-sm" onclick="deleteData('${item.id}')">🗑️ Hapus</button>
                         </td>
                     </tr>
@@ -1028,6 +1132,75 @@
                 loadData();
                 showToast('Data berhasil dihapus', 'error');
             } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        // --- EDIT MODAL ---
+        function openEditModal(id) {
+            const item = allData.find(d => d.id === id);
+            if (!item) return;
+
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editEmail').value = item.email;
+            document.getElementById('editName').value = item.name;
+            document.getElementById('editKodeMMS').value = item.kodeMMS;
+            document.getElementById('editNamaMMS').value = item.namaMMS;
+            document.getElementById('editCIF').value = item.cif;
+            document.getElementById('editNamaNasabah').value = item.namaNasabah;
+            document.getElementById('editSentra').value = item.namaSentra;
+            document.getElementById('editSiklus').value = item.siklusTpsk;
+            document.getElementById('editPlafon').value = item.plafonTpsk;
+            document.getElementById('editStatusFinansial').value = item.statusFinansial;
+            document.getElementById('editValidasi').value = item.validasiData;
+            document.getElementById('editKeterangan').value = item.keterangan || '';
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        async function updateData(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('editId').value;
+            const updatedData = {
+                email: document.getElementById('editEmail').value,
+                name: document.getElementById('editName').value,
+                kodeMMS: document.getElementById('editKodeMMS').value,
+                namaMMS: document.getElementById('editNamaMMS').value,
+                cif: document.getElementById('editCIF').value,
+                namaNasabah: document.getElementById('editNamaNasabah').value,
+                namaSentra: document.getElementById('editSentra').value,
+                siklusTpsk: document.getElementById('editSiklus').value || 0,
+                plafonTpsk: document.getElementById('editPlafon').value || 0,
+                statusFinansial: document.getElementById('editStatusFinansial').value,
+                validasiData: document.getElementById('editValidasi').value,
+                keterangan: document.getElementById('editKeterangan').value,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const btn = document.querySelector('#editForm button[type="submit"]');
+            btn.textContent = '⏳ Updating...';
+            btn.disabled = true;
+
+            try {
+                await collection.doc(id).update(updatedData);
+                
+                btn.textContent = '✅ Updated!';
+                setTimeout(() => {
+                    btn.textContent = '💾 Update Data';
+                    btn.disabled = false;
+                    closeEditModal();
+                }, 1000);
+
+                loadData();
+                showToast('Data berhasil diupdate!', 'success');
+            } catch (error) {
+                btn.textContent = '💾 Update Data';
+                btn.disabled = false;
                 showToast('Error: ' + error.message, 'error');
             }
         }
@@ -1176,6 +1349,15 @@
 
         // --- EVENT LISTENERS ---
         document.getElementById('createForm').addEventListener('submit', saveData);
+        document.getElementById('editForm').addEventListener('submit', updateData);
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        };
 
         // --- INIT ---
         window.onload = function() {
